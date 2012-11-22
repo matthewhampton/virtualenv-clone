@@ -299,6 +299,9 @@ def check_all_files(old_dir, new_dir):
                     data = f.read()
                 if old_dir in data or os.path.abspath(old_dir) in data:
                     logging.warning("reference to old path found in file (fix manually): %s " % filename)
+                elif os.path.basename(old_dir) in data:
+                    logging.warning("reference to virtualenv name found in file (fix manually): %s " % filename)
+
 
 def main():
     parser = optparse.OptionParser("usage: %prog [options]"
