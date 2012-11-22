@@ -7,6 +7,8 @@ import shutil
 import subprocess
 import sys
 
+
+DEBUG = False
 version_info = (0, 2, 4)
 __version__ = '.'.join(map(str, version_info))
 
@@ -63,13 +65,14 @@ def _virtualenv_sys(venv_path):
 def clone_virtualenv(src_dir, dst_dir):
     if not os.path.exists(src_dir):
         raise UserError('src dir %r does not exist' % src_dir)
-    if os.path.exists(dst_dir):
+    if os.path.exists(dst_dir) and not DEBUG:
         raise UserError('dest dir %r exists' % dst_dir)
     #sys_path = _virtualenv_syspath(src_dir)
-    logger.info('cloning virtualenv \'%s\' => \'%s\'...' %
-            (src_dir, dst_dir))
-    shutil.copytree(src_dir, dst_dir, symlinks=True,
-            ignore=shutil.ignore_patterns('*.pyc', '*.pyo'))
+    if not os.path.exists(dst_dir):
+        logger.info('cloning virtualenv \'%s\' => \'%s\'...' %
+                (src_dir, dst_dir))
+        shutil.copytree(src_dir, dst_dir, symlinks=True,
+                ignore=shutil.ignore_patterns('*.pyc', '*.pyo'))
     version, sys_path = _virtualenv_sys(dst_dir)
     logger.info('fixing scripts in bin...')
     fixup_scripts(src_dir, dst_dir, version)
