@@ -19,6 +19,14 @@ logger = logging.getLogger()
 if sys.version_info < (2, 6):
     next = lambda gen: gen.next()
 
+_IS_WIN = 'win' in sys.platform
+
+if not _IS_WIN:
+    def _get_python_executable(venv_path):
+        return os.path.join(venv_path, 'bin', 'python')
+else:
+    def _get_python_executable(venv_path):
+        return os.path.join(venv_path, 'Scripts', 'python.exe')
 
 class UserError(Exception):
     pass
@@ -47,7 +55,7 @@ def _dirmatch(path, matchwith):
 
 def _virtualenv_sys(venv_path):
     "obtain version and path info from a virtualenv."
-    executable = os.path.join(venv_path, 'bin', 'python')
+    executable = _get_python_executable(venv_path)
     # Must use "executable" as the first argument rather than as the
     # keyword argument "executable" to get correct value from sys.path
     p = subprocess.Popen([executable,
