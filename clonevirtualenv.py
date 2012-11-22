@@ -77,7 +77,7 @@ def _virtualenv_sys(venv_path):
     return lines[0], filter(bool, lines[1:])
 
 
-def clone_virtualenv(src_dir, dst_dir):
+def clone_virtualenv(src_dir, dst_dir, no_check=False):
     if not os.path.exists(src_dir):
         raise UserError('src dir %r does not exist' % src_dir)
     if os.path.exists(dst_dir) and not DEBUG:
@@ -102,6 +102,8 @@ def clone_virtualenv(src_dir, dst_dir):
     remaining = has_old(_virtualenv_sys(dst_dir)[1])
     assert not remaining, _virtualenv_sys(dst_dir)
 
+    if not no_check:
+        check_all_files(src_dir, dst_dir)
 
 def fixup_scripts(old_dir, new_dir, version, rewrite_env_python=False):
     bin_dir = _get_script_dir(new_dir)
@@ -287,6 +289,16 @@ def fixup_egglink_file(filename, old_dir, new_dir):
             link = (link + '\n').encode('utf-8')
             f.write(link)
 
+def check_all_files(old_dir, new_dir):
+    logging.info('checking new file contents for references to old source dir')
+    for root, dirs, files in os.walk(new_dir):
+        for file_ in files:
+            filename = os.path.join(root, file_)
+            if not filename.endswith('.pyc') and not filename.endswith('.pyo'):
+                with open(filename, 'rb') as f:
+                    data = f.read()
+                if old_dir in data or os.path.abspath(old_dir) in data:
+                    logging.warning("reference to old path found in file (fix manually): %s " % filename)
 
 def main():
     parser = optparse.OptionParser("usage: %prog [options]"
@@ -296,6 +308,11 @@ def main():
             dest='verbose',
             default=False,
             help='verbosity')
+    parser.add_option('-n',
+        action="store_true",
+        dest='no_check',
+        default=False,
+        help='disable checking of file contents')
     options, args = parser.parse_args()
     try:
         old_dir, new_dir = args
@@ -307,7 +324,7 @@ def main():
             options.verbose)]
     logging.basicConfig(level=loglevel, format='%(message)s')
     try:
-        clone_virtualenv(old_dir, new_dir)
+        clone_virtualenv(old_dir, new_dir, no_check=options.no_check)
     except UserError:
         e = sys.exc_info()[1]
         parser.error(str(e))
