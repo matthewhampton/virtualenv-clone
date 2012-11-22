@@ -188,15 +188,21 @@ def fixup_script_(root, file_, old_dir, new_dir, version,
 def _to_cygwin_path(dir):
     return dir.replace(':', '').replace('\\', '/')
 
+def _get_set_prompt_src(dir):
+    return 'set PROMPT=(%s)' % os.path.basename(dir)
+
 def fixup_activate(filename, old_dir, new_dir):
     logger.debug('fixing %s' % filename)
     with open(filename, 'rb') as f:
         data = f.read().decode('utf-8')
 
     data = data.replace(old_dir, new_dir)
+
     if _IS_WIN:
         #There are some cygwin path styles
         data = data.replace(_to_cygwin_path(old_dir), _to_cygwin_path(new_dir))
+        #The activate batch script on windows sets the prompt as follows:
+        data = data.replace(_get_set_prompt_src(old_dir), _get_set_prompt_src(new_dir))
 
     with open(filename, 'wb') as f:
         f.write(data.encode('utf-8'))
