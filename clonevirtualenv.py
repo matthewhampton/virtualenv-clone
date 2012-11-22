@@ -69,7 +69,7 @@ def clone_virtualenv(src_dir, dst_dir):
     logger.info('cloning virtualenv \'%s\' => \'%s\'...' %
             (src_dir, dst_dir))
     shutil.copytree(src_dir, dst_dir, symlinks=True,
-            ignore=shutil.ignore_patterns('*.pyc'))
+            ignore=shutil.ignore_patterns('*.pyc', '*.pyo'))
     version, sys_path = _virtualenv_sys(dst_dir)
     logger.info('fixing scripts in bin...')
     fixup_scripts(src_dir, dst_dir, version)
