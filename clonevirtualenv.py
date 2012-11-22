@@ -128,11 +128,17 @@ def fixup_scripts(old_dir, new_dir, version, rewrite_env_python=False):
             fixup_script_(root, file_, old_dir, new_dir, version,
                 rewrite_env_python=rewrite_env_python)
 
+if not _IS_WIN:
+    def _get_shebang(dir):
+        return '#!%s/bin/python' % os.path.normcase(os.path.abspath(dir))
+else:
+    def _get_shebang(dir):
+        return '#!%s\\Scripts\\python.exe'  % os.path.abspath(dir)
 
 def fixup_script_(root, file_, old_dir, new_dir, version,
                   rewrite_env_python=False):
-    old_shebang = '#!%s/bin/python' % os.path.normcase(os.path.abspath(old_dir))
-    new_shebang = '#!%s/bin/python' % os.path.normcase(os.path.abspath(new_dir))
+    old_shebang = _get_shebang(old_dir)
+    new_shebang = _get_shebang(new_dir)
     env_shebang = '#!/usr/bin/env python'
 
     filename = os.path.join(root, file_)
@@ -179,6 +185,8 @@ def fixup_script_(root, file_, old_dir, new_dir, version,
         # can't do anything
         return
 
+def _to_cygwin_path(dir):
+    return dir.replace(':', '').replace('\\', '/')
 
 def fixup_activate(filename, old_dir, new_dir):
     logger.debug('fixing %s' % filename)
@@ -186,6 +194,10 @@ def fixup_activate(filename, old_dir, new_dir):
         data = f.read().decode('utf-8')
 
     data = data.replace(old_dir, new_dir)
+    if _IS_WIN:
+        #There are some cygwin path styles
+        data = data.replace(_to_cygwin_path(old_dir), _to_cygwin_path(new_dir))
+
     with open(filename, 'wb') as f:
         f.write(data.encode('utf-8'))
 
