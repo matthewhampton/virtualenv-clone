@@ -28,6 +28,13 @@ else:
     def _get_python_executable(venv_path):
         return os.path.join(venv_path, 'Scripts', 'python.exe')
 
+if not _IS_WIN:
+    def _get_script_dir(new_dir):
+        return os.path.join(new_dir, 'bin')
+else:
+    def _get_script_dir(new_dir):
+        return os.path.join(new_dir, 'Scripts')
+
 class UserError(Exception):
     pass
 
@@ -82,7 +89,7 @@ def clone_virtualenv(src_dir, dst_dir):
         shutil.copytree(src_dir, dst_dir, symlinks=True,
                 ignore=shutil.ignore_patterns('*.pyc', '*.pyo'))
     version, sys_path = _virtualenv_sys(dst_dir)
-    logger.info('fixing scripts in bin...')
+    logger.info('fixing scripts in bin/Scripts...')
     fixup_scripts(src_dir, dst_dir, version)
 
     has_old = lambda s: any(i for i in s if _dirmatch(i, src_dir))
@@ -97,7 +104,7 @@ def clone_virtualenv(src_dir, dst_dir):
 
 
 def fixup_scripts(old_dir, new_dir, version, rewrite_env_python=False):
-    bin_dir = os.path.join(new_dir, 'bin')
+    bin_dir = _get_script_dir(new_dir)
     root, dirs, files = next(os.walk(bin_dir))
     pybinre = re.compile('pythonw?([0-9]+(\.[0-9]+(\.[0-9]+)?)?)?$')
     for file_ in files:
@@ -107,7 +114,10 @@ def fixup_scripts(old_dir, new_dir, version, rewrite_env_python=False):
         elif file_.startswith('python') and pybinre.match(file_):
             # ignore other possible python binaries
             continue
-        elif file_.endswith('.pyc'):
+        elif file_.endswith('.exe'):
+            # ignore executables on windows
+            continue
+        elif file_.endswith('.pyc') or file_.endswith('.pyo'):
             # ignore compiled files
             continue
         elif file_ == 'activate' or file_.startswith('activate.'):
